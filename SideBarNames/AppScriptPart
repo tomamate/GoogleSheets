@@ -1,0 +1,61 @@
+function onOpen() {
+  SpreadsheetApp
+    .getUi()
+    .createMenu("SideBar")
+    .addItem("Informacion", "showAdminSidebar")  // Primera opción
+    .addItem("Modificar fila", "openSidebar")    // Segunda opción
+    .addToUi();  // Añadimos las opciones al menú
+}
+
+
+function showAdminSidebar() {
+ var widget = HtmlService.createHtmlOutputFromFile("Form.html");
+ widget.setTitle("Informacion: ");
+ SpreadsheetApp.getUi().showSidebar(widget);
+}
+
+
+function appendRowFromFormSubmit(form) {
+ var row = [form.firstName, form.lastName, form.number, form.department, form.location];
+ SpreadsheetApp.getActiveSheet().appendRow(row);
+}
+
+function openSidebar() {
+  const widget = HtmlService.createHtmlOutputFromFile("update.html");
+      widget.setTitle("Actualizar o Borrar");
+  SpreadsheetApp.getUi().showSidebar(widget);
+}
+
+function searchData(searchValue) {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const data = sheet.getDataRange().getValues();
+    const results = [];
+
+    for (let i = 0; i < data.length; i++) {
+        if (data[i][0].toLowerCase().includes(searchValue)) {
+            results.push({
+                name: data[i][0],    // Columna A: nombre
+                lastname: data[i][1], // Columna B: apellido
+                phone: data[i][2],    // Columna C: teléfono
+                department: data[i][3], // Columna D: departamento
+                location: data[i][4],  // Columna E: ubicación
+                rowIndex: i + 1        // Índice de la fila en la hoja (empezando desde 1)
+            });
+        }
+    }
+
+    return results;
+}
+
+function updateRowData(rowIndex, updatedData) {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const range = sheet.getRange(rowIndex, 1, 1, 5); // Asegúrate de que las 5 columnas estén en el rango
+    const values = [[updatedData.name, updatedData.lastname, updatedData.phone, updatedData.department, updatedData.location]];
+
+    range.setValues(values);  // Esto debería actualizar la fila seleccionada correctamente
+}
+
+function deleteRowFromSheet(rowIndex) {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    sheet.deleteRow(rowIndex - 1); // Ajusta el índice de la fila correctamente
+}
