@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar y Modificar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"], select {
+              width: 100%;
+              padding: 10px;
+              margin-top: 10px;
+              border-radius: 5px;
+              border: 1px solid #ccc;
+          }
+
+          /* Estilo específico para los botones */
+          input[type="button"] {
+              width: 100%;
+              padding: 10px;
+              margin-top: 10px;
+              border-radius: 5px;
+              border: 1px solid #ccc;
+              background-color: #007bff; /* Color azul para el botón */
+              color: white;
+              font-weight: bold;
+              cursor: pointer;
+          }
+
+          input[type="button"]:hover {
+              background-color: #0056b3; /* Azul más oscuro cuando se pasa el ratón */
+          }
+
+        input[type="button"].delete-btn {
+          background-color: #f44336; /* Color rojo para el botón de borrar */
+          color: white;
+      }
+
+      input[type="button"].delete-btn:hover {
+          background-color: #d32f2f; /* Rojo más oscuro en hover */
+      }
+
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            padding: 8px;
+            background-color: #eaeaea;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+
+        .result-item:hover {
+            background-color: #ddd;
+        }
+
+        #selectedRowFields {
+            display: none;
+        }
+
+        .radio-group {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        
+        <label for="searchInput">Buscar por nombre:</label>
+        <input type="text" id="searchInput" placeholder="Escribe un nombre..." oninput="searchName()">
+        
+        <div class="results" id="results"></div>
+
+        <div id="selectedRowFields">
+            <h4>Modificar Datos</h4>
+            <label for="name">Nombre:</label>
+            <input type="text" id="name">
+            <label for="lastname">Apellido:</label>
+            <input type="text" id="lastname">
+            <label for="phone">Teléfono:</label>
+            <input type="text" id="phone" maxlength="10" oninput="validatePhone()">
+            <label>Departamento:</label>
+            <div id="department">
+                <input type="radio" id="Ventas" name="department" value="Ventas">
+                <label for="Ventas">Ventas</label><br>
+
+                <input type="radio" id="Marketing" name="department" value="Marketing">
+                <label for="Marketing">Marketing</label><br>
+
+                <input type="radio" id="Logistica" name="department" value="Logística">
+                <label for="Logistica">Logística</label><br>
+
+                <input type="radio" id="TI" name="department" value="TI">
+                <label for="TI">TI</label><br>
+            </div>
+             <label>Ubicación:</label>
+              <div id="ubicacion">
+                  <input type="radio" id="guadalajara" name="ubicacion" value="Guadalajara">
+                  <label for="guadalajara">Guadalajara</label><br>
+
+                  <input type="radio" id="cdmx" name="ubicacion" value="CDMX">
+                  <label for="cdmx">CDMX</label><br>
+
+                  <input type="radio" id="veracruz" name="ubicacion" value="Veracruz">
+                  <label for="veracruz">Veracruz</label><br>
+
+                  <input type="radio" id="monterrey" name="ubicacion" value="Monterrey">
+                  <label for="monterrey">Monterrey</label><br>
+              </div>
+            <input type="button" value="Actualizar" onclick="updateRow()">
+            <!-- Agregar un botón de borrar -->
+            <input type="button" value="Borrar" class="delete-btn" onclick="deleteRow()">
+
+
+        </div>
+    </div>
+
+    <script>
+    let selectedRowIndex = -1;
+
+    function searchName() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        google.script.run.withSuccessHandler(displayResults).searchData(searchValue);
+    }
+
+    function displayResults(results) {
+        const resultsContainer = document.getElementById('results');
+        resultsContainer.innerHTML = '';
+
+        if (results.length === 0) {
+            resultsContainer.innerHTML = '<p>No se encontraron coincidencias.</p>';
+            return;
+        }
+
+        results.forEach((result, index) => {
+            const div = document.createElement('div');
+            div.classList.add('result-item');
+            div.textContent = result.name;
+            div.onclick = () => selectRow(result.rowIndex, result);  // Cambié el 'index' a 'result.rowIndex'
+            resultsContainer.appendChild(div);
+        });
+    }
+
+    function selectRow(rowIndex, rowData) {
+        selectedRowIndex = rowIndex;  // Establecemos correctamente el índice de la fila
+        document.getElementById('selectedRowFields').style.display = 'block';
+
+        document.getElementById('name').value = rowData.name;
+        document.getElementById('lastname').value = rowData.lastname;
+        document.getElementById('phone').value = rowData.phone;
+        
+        // Departamento: Seleccionar el radio button correcto
+      const departmentRadios = document.getElementsByName('department');
+      for (let i = 0; i < departmentRadios.length; i++) {
+          if (departmentRadios[i].value === rowData.department) {
+              departmentRadios[i].checked = true;  // Seleccionar el radio button adecuado
+              break;  // Terminar el bucle una vez se encuentre la coincidencia
+          }
+        }
+
+        // Seleccionar el radio button correcto
+        const ubicacionRadios = document.getElementsByName('ubicacion');
+        for (let i = 0; i < ubicacionRadios.length; i++) {
+            if (ubicacionRadios[i].value === rowData.location) {
+                ubicacionRadios[i].checked = true;
+                break;
+            }
+        }
+    }
+
+    function updateRow() {
+    if (selectedRowIndex === -1) return;  // Si no se ha seleccionado ninguna fila, no se actualiza
+
+    const updatedData = {
+        name: document.getElementById('name').value,
+        lastname: document.getElementById('lastname').value,
+        phone: document.getElementById('phone').value,
+        department: document.querySelector('input[name="department"]:checked').value,  // Tomar el departamento seleccionado
+        location: document.querySelector('input[name="ubicacion"]:checked').value  // Tomar la ubicación seleccionada
+    };
+
+    google.script.run.updateRowData(selectedRowIndex, updatedData);  // Pasamos el índice correcto
+    document.getElementById('selectedRowFields').style.display = 'none';
+    document.getElementById('searchInput').value = '';
+}
+
+function deleteRow() {
+    if (selectedRowIndex === -1) {
+        alert("Por favor, selecciona un nombre para borrar.");
+        return;
+    }
+
+    // Confirmación antes de eliminar
+    if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+        google.script.run.withSuccessHandler(() => {
+            alert("Fila eliminada con éxito.");
+            document.getElementById("selectedRowFields").style.display = "none";
+            document.getElementById("searchInput").value = "";
+            document.getElementById("results").innerHTML = ""; // Limpiar resultados
+        }).deleteRowFromSheet(selectedRowIndex);
+    }
+}
+
+
+
+</script>
+
+</body>
+</html>
